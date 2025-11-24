@@ -1,52 +1,27 @@
 const Project = require("../models/Project");
 
-exports.createProject = async (req, res) => {
+exports.listProjects = async (req, res) => {
+  const projects = await Project.find();
+  res.json(projects);
+};
+
+exports.addProject = async (req, res) => {
   try {
     const project = new Project({
       name: req.body.name,
       description: req.body.description,
-      image: req.file ? req.file.filename : ""
+      image: req.file ? req.file.path : null // this should work with multer-storage-cloudinary v5+
     });
-
     await project.save();
-    res.json({ message: "Project created", project });
+    res.json({ success: true, project });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error("Add Project Error:", err);
+    res.status(500).json({ error: "Internal Server Error" });
   }
 };
 
-exports.getProjects = async (req, res) => {
-  try {
-    const projects = await Project.find();
-    res.json(projects);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-};
-
-exports.updateProject = async (req, res) => {
-  try {
-    const updated = await Project.findByIdAndUpdate(
-      req.params.id,
-      {
-        name: req.body.name,
-        description: req.body.description,
-        image: req.file ? req.file.filename : req.body.image
-      },
-      { new: true }
-    );
-
-    res.json(updated);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-};
 
 exports.deleteProject = async (req, res) => {
-  try {
-    await Project.findByIdAndDelete(req.params.id);
-    res.json({ message: "Project deleted" });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+  await Project.findByIdAndDelete(req.params.id);
+  res.json({ success: true });
 };
