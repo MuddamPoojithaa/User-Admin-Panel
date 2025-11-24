@@ -1,27 +1,54 @@
-const Project = require("../models/Project");
+const Project = require('../models/Project');
 
-exports.listProjects = async (req, res) => {
-  const projects = await Project.find();
-  res.json(projects);
+// CREATE
+exports.createProject = async (req, res) => {
+    try {
+        const project = await Project.create(req.body);
+        res.status(201).json(project);
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
 };
 
-exports.addProject = async (req, res) => {
-  try {
-    const project = new Project({
-      name: req.body.name,
-      description: req.body.description,
-      image: req.file ? req.file.path : null // this should work with multer-storage-cloudinary v5+
-    });
-    await project.save();
-    res.json({ success: true, project });
-  } catch (err) {
-    console.error("Add Project Error:", err);
-    res.status(500).json({ error: "Internal Server Error" });
-  }
+// READ ALL
+exports.getProjects = async (req, res) => {
+    try {
+        const projects = await Project.find();
+        res.status(200).json(projects);
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
 };
 
+// READ ONE
+exports.getProject = async (req, res) => {
+    try {
+        const project = await Project.findById(req.params.id);
+        if (!project) return res.status(404).json({ message: 'Project not found' });
+        res.status(200).json(project);
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+};
 
+// UPDATE
+exports.updateProject = async (req, res) => {
+    try {
+        const project = await Project.findByIdAndUpdate(req.params.id, req.body, { new: true });
+        if (!project) return res.status(404).json({ message: 'Project not found' });
+        res.status(200).json(project);
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+};
+
+// DELETE
 exports.deleteProject = async (req, res) => {
-  await Project.findByIdAndDelete(req.params.id);
-  res.json({ success: true });
+    try {
+        const project = await Project.findByIdAndDelete(req.params.id);
+        if (!project) return res.status(404).json({ message: 'Project not found' });
+        res.status(200).json({ message: 'Project deleted' });
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
 };
