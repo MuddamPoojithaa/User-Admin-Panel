@@ -1,57 +1,35 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const Project = require('../models/Project');
+const multer = require("multer");
+const Project = require("../models/Project");
 
-// CREATE
-router.post('/', async (req, res) => {
-  try {
-    const project = await Project.create(req.body);
-    res.status(201).json(project);
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
+// Image Upload Setup
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => cb(null, "uploads/"),
+  filename: (req, file, cb) => cb(null, Date.now() + "-" + file.originalname)
 });
 
-// READ ALL
-router.get('/', async (req, res) => {
-  try {
-    const projects = await Project.find();
-    res.status(200).json(projects);
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
+const upload = multer({ storage });
+
+// READ ALL PROJECTS
+router.get("/", async (req, res) => {
+  const projects = await Project.find();
+  res.json(projects);
 });
 
-// READ ONE
-router.get('/:id', async (req, res) => {
+// CREATE PROJECT
+router.post("/", upload.single("image"), async (req, res) => {
   try {
-    const project = await Project.findById(req.params.id);
-    if (!project) return res.status(404).json({ message: 'Project not found' });
-    res.status(200).json(project);
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
-});
+    const project = new Project({
+      title: req.body.title,
+      description: req.body.description,
+      image: req.file?.filename ?? ""
+    });
 
-// UPDATE
-router.put('/:id', async (req, res) => {
-  try {
-    const project = await Project.findByIdAndUpdate(req.params.id, req.body, { new: true });
-    if (!project) return res.status(404).json({ message: 'Project not found' });
-    res.status(200).json(project);
+    await project.save();
+    res.json({ message: "Project added", project });
   } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
-});
-
-// DELETE
-router.delete('/:id', async (req, res) => {
-  try {
-    const project = await Project.findByIdAndDelete(req.params.id);
-    if (!project) return res.status(404).json({ message: 'Project not found' });
-    res.status(200).json({ message: 'Project deleted' });
-  } catch (err) {
-    res.status(500).json({ message: err.message });
+    res.status(500).json({ error: err.message });
   }
 });
 
